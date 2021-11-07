@@ -2,25 +2,31 @@ CC = g++
 CCFLAGS = -g -Wall
 LIBS = 
 
-TARGET = eridu
-SRCDIR = src
+OUT = bin
+BIN = eridu
+SRC = src
 
-.PHONY: default all clean
+OBJECTS = $(patsubst $(SRC)/%.cpp, $(SRC)/%.o, $(wildcard $(SRC)/*.cpp) $(wildcard $(SRC)/*/*.cpp))
+HEADERS = $(wildcard $(SRC)/*.hpp) $(wildcard $(SRC)/*/*.hpp)
 
-default:	$(TARGET)
-all:		default
+.PHONY: .FORCE
+.FORCE:
 
-OBJECTS = $(patsubst $(SRCDIR)/%.cpp, $(SRCDIR)/%.o, $(wildcard $(SRCDIR)/*.cpp) $(wildcard $(SRCDIR)/*/*.cpp))
-HEADERS = $(wildcard $(SRCDIR)/*.hpp) $(wildcard $(SRCDIR)/*/*.hpp)
+all:  clean build
+
+rebuild:  all
 
 %.o: %.cpp $(HEADERS)
 	$(CC) $(CCFLAGS) -c $< -o $@
 
-.PRECIOUS: $(TARGET) $(OBJECTS)
-
-$(TARGET): $(OBJECTS)
-	$(CC) $(OBJECTS) $(LIBS) -o $@
+build:	$(OBJECTS)
+	@mkdir -p $(OUT)
+	$(CC) $(OBJECTS) $(LIBS) -o $(OUT)/$(BIN)
 
 clean:
-	-rm -f $(SRCDIR)/*.o
-	-rm -f $(TARGET)
+	@mkdir -p $(OUT)
+	-rm -f $(SRC)/*.o
+	-rm -f $(OUT)/$(BIN)
+
+test:	all
+	./$(OUT)/$(BIN) "roms/test.txt"

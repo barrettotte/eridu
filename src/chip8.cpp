@@ -31,16 +31,16 @@ namespace eridu{
 
     // reset emulator state
     void Chip8::reset() {
-        currOp = 0;
-        idxReg = 0;
-        pcReg = 0x200; // 0x000-0x1FF reserved
-        spReg = 0;
+        ir = 0;
+        mar = 0;
+        pc = 0x200; // 0x000-0x1FF reserved for interpreter
+        sp = 0;
 
-        std::memset(regs, 0, 16);
-        std::memset(ram, 0, 4096);
-        std::memset(stack, 0, 16);
-        std::memset(display, 0, 2048);
-        std::memset(keypad, 0, 16);
+        std::memset(regs, 0, sizeof(regs));
+        std::memset(ram, 0, sizeof(ram));
+        std::memset(stack, 0, sizeof(stack));
+        std::memset(display, 0, sizeof(display));
+        std::memset(keypad, 0, sizeof(keypad));
         
         delayTimer = 0;
         soundTimer = 0;
@@ -63,5 +63,21 @@ namespace eridu{
             }
             ram[i] = (uint8_t) c;
         }
+    }
+
+    // perform one CPU cycle
+    void Chip8::cycle() {
+        ir = (ram[pc] << 8) | (ram[pc + 1]);
+
+        // debug print
+        printf("\nPC %.4X    IR %.4X    SP %.2X\n", pc, ir, sp);
+        for (uint8_t i = 0; i < 16; i++) {
+            printf("V%.1X %.2X      ", i, regs[i]);
+
+            if ((i+1) % 4 == 0) {
+                printf("\n");
+            }
+        }
+        printf("\n");
     }
 }

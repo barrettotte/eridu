@@ -7,10 +7,12 @@ int main(int argc, char** argv) {
             throw std::runtime_error("No file path to ROM supplied.");
         }
         eridu::Chip8 chip8;
-        chip8.load("test.file");  // argv[1]
+        chip8.load(argv[1]);
 
-        while(1) {
+        int i = 0; // temp
+        while(i < 4) {
             chip8.cycle();
+            i++;
         }
 
     } catch (const std::exception& e) {
