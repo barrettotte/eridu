@@ -1,16 +1,16 @@
 #include <iostream>
-#include "cpu.hpp"
+#include "chip8.hpp"
 
 int main(int argc, char** argv) {
     try{
         if (argc <= 1) {
-            throw("No file path to ROM supplied.");
+            throw std::runtime_error("No file path to ROM supplied.");
         }
-        eridu::Cpu cpu;
-        cpu.init("test.file");  // argv[1]
+        eridu::Chip8 chip8;
+        chip8.load("test.file");  // argv[1]
 
         while(1) {
-            cpu.cycle();
+            chip8.cycle();
         }
 
     } catch (const std::exception& e) {

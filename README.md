@@ -1,6 +1,8 @@
 # eridu
 
-Yet another CHIP-8 emulator.
+Yet another CHIP-8 interpreter.
+
+Nothing special, just having fun.
 
 ## Setup
 

@@ -1,12 +1,12 @@
 #include <cstring>
+#include <fstream>
 #include <iostream>
-#include <vector>
 
-#include "cpu.hpp"
+#include "chip8.hpp"
 
 namespace eridu{
 
-    uint8_t font[80] = {
+    const uint8_t font[80] = {
         0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
         0x20, 0x60, 0x20, 0x20, 0x70, // 1
         0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -25,18 +25,43 @@ namespace eridu{
         0xF0, 0x80, 0xF0, 0x80, 0x80  // F
     };
 
-    void Cpu::init(const std::string rom) {
+    Chip8::Chip8() {
+        this->reset();
+    }
+
+    // reset emulator state
+    void Chip8::reset() {
         currOp = 0;
         idxReg = 0;
-        pcReg = 0x200;
+        pcReg = 0x200; // 0x000-0x1FF reserved
         spReg = 0;
+
         std::memset(regs, 0, 16);
-        std::memset(mem, 0, 4096);
+        std::memset(ram, 0, 4096);
         std::memset(stack, 0, 16);
+        std::memset(display, 0, 2048);
         std::memset(keypad, 0, 16);
+        
         delayTimer = 0;
         soundTimer = 0;
+
+        std::memcpy(ram + 0x050, font, 80);  // load font to 0x050-0x09F
+    }
+
+    // load ROM from file path
+    void Chip8::load(const std::string path) {
+        std::ifstream f(path, std::ios::binary | std::ios::in);
+
+        if (!f.is_open()) {
+            throw std::runtime_error("Failed to open ROM at '" + path + "'");
+        }
         
-        std::memcpy(mem + 0x50, font, 80);  // load font to 0x050-0x0A0
+        char c;
+        for (int i = 0x200; f.get(c); i++) {
+            if (i + 512 >= 4096) {
+                throw std::runtime_error("ROM size is too large. Must be < 4096 bytes");
+            }
+            ram[i] = (uint8_t) c;
+        }
     }
 }
