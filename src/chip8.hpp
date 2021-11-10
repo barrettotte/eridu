@@ -11,6 +11,7 @@ namespace eridu {
             void reset();
             void load(const std::string rom);
             void cycle();
+            void debugPrint();
 
         private:
             uint8_t ram[4096];      //

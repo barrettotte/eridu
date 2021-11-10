@@ -2,7 +2,7 @@
 
 Yet another CHIP-8 interpreter.
 
-Nothing special, just having fun.
+Nothing special, just having a little fun.
 
 ## Setup
 
