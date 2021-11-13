@@ -1,4 +1,5 @@
 #include <iostream>
+
 #include "chip8.hpp"
 
 int main(int argc, char** argv) {
@@ -8,12 +9,7 @@ int main(int argc, char** argv) {
         }
         eridu::Chip8 chip8;
         chip8.load(argv[1]);
-
-        int i = 0; // temp
-        while(i < 4) {
-            chip8.cycle();
-            i++;
-        }
+        chip8.run();
 
     } catch (const std::exception& e) {
         std::cerr << e.what();

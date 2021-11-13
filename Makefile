@@ -1,6 +1,6 @@
 CC = g++
 CCFLAGS = -g -Wall
-LIBS = 
+LIBS = -lSDL2
 
 OUT = bin
 BIN = eridu
@@ -23,10 +23,22 @@ build:	$(OBJECTS)
 	@mkdir -p $(OUT)
 	$(CC) $(OBJECTS) $(LIBS) -o $(OUT)/$(BIN)
 
+roms:	.FORCE
+	@mkdir -p roms
+	-curl -o roms.zip "https://www.zophar.net/fileuploads/2/11688yibwo/c8games.zip"
+	-unzip roms.zip -d roms
+	-rm -f roms.zip
+
 clean:
 	@mkdir -p $(OUT)
 	-rm -f $(SRC)/*.o
 	-rm -f $(OUT)/$(BIN)
 
 test:	all
-	./$(OUT)/$(BIN) "roms/test.txt"
+	./$(OUT)/$(BIN) roms/test_opcode.ch8
+
+tetris:	all
+	./$(OUT)/$(BIN) roms/TETRIS
+
+pong: all
+	./$(OUT)/$(BIN) roms/PONG2
