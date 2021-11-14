@@ -2,7 +2,9 @@
 
 Yet another CHIP-8 interpreter.
 
-Nothing special.
+Nothing special, probably doesn't even completely work.
+
+![docs/ibm-logo.png](docs/ibm-logo.png)
 
 ## Running
 
@@ -18,3 +20,4 @@ Nothing special.
 - [Guide to making a CHIP-8 emulator](https://tobiasvl.github.io/blog/write-a-chip-8-emulator/)
 - [Chip-8 Games Pack](https://www.zophar.net/pdroms/chip8/chip-8-games-pack.html)
 - [chip8-test-rom](https://github.com/corax89/chip8-test-rom/blob/master/test_opcode.ch8)
+- [IBM logo rom](https://github.com/loktar00/chip8/blob/master/roms/IBM%20Logo.ch8)
