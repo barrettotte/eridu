@@ -4,8 +4,8 @@
 #include <string>
 #include <SDL2/SDL.h>
 
-#define VX regs[(ir & 0x0F00) >> 8u]
-#define VY regs[(ir & 0x00F0) >> 4u]
+#define VX regs[(ir & 0x0F00) >> 8]
+#define VY regs[(ir & 0x00F0) >> 4]
 #define VF regs[0xF]
 
 namespace eridu {
@@ -40,7 +40,6 @@ namespace eridu {
         public:
             Chip8();
             ~Chip8();
-
             void reset();                      // reset emulator state
             void load(const std::string rom);  // load ROM into emulator
             void run();                        // emulator loop
@@ -49,12 +48,10 @@ namespace eridu {
             std::string romPath;
             bool isAlive;
             int pitch;
-            bool screenRefresh;
 
-            void cycle();      // process one cycle
-            void output();     // output to display
-            void input();      // read input into keypad
-            void initVideo();  // init SDL objects
+            SDL_Texture* texture;
+            SDL_Renderer* renderer;
+            SDL_Window* window;
 
             uint8_t ram[4096];
             uint32_t display[SCREEN_WIDTH * SCREEN_HEIGHT];
@@ -62,17 +59,17 @@ namespace eridu {
             uint8_t keypad[16];
             uint16_t stack[16];
 
-            uint16_t ir;            // instruction register
-            uint16_t mar;           // memory address register; "I"
-            uint16_t pc;            // program counter
-            uint16_t sp;            // stack pointer
+            uint16_t ir;         // instruction register
+            uint16_t mar;        // memory address register; "I"
+            uint16_t pc;         // program counter
+            uint16_t sp;         // stack pointer
+            uint8_t delayTimer;  // 60Hz
+            uint8_t soundTimer;  // 60Hz
 
-            uint8_t delayTimer;     // 60Hz
-            uint8_t soundTimer;     // 60Hz
-
-            SDL_Texture* texture;
-            SDL_Renderer* renderer;
-            SDL_Window* window;
+            void cycle();        // process one cycle
+            void output();       // output to display
+            void input();        // read input into keypad
+            void initVideo();    // init SDL objects
 
             // instruction groups
             void insG0();

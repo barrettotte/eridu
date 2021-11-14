@@ -34,18 +34,17 @@ namespace eridu{
         sp = 0;
 
         std::memset(regs, 0, sizeof(regs));
-        std::memset(ram, 0, sizeof(ram));
         std::memset(stack, 0, sizeof(stack));
         std::memset(display, 0, sizeof(display));
         std::memset(keypad, 0, sizeof(keypad));
-        
+        std::memset(ram, 0, sizeof(ram));
+        std::memcpy(ram + FONT_START, FONT, 80);  // load font to 0x050-0x09F
+
         delayTimer = 0;
         soundTimer = 0;
-        std::memcpy(ram + FONT_START, FONT, 80);  // load font to 0x050-0x09F
-        
         romPath = "";
-        screenRefresh = false;
         isAlive = true;
+        srand(time(NULL));
     }
 
     // load ROM into emulator
@@ -56,21 +55,12 @@ namespace eridu{
         if (!f.is_open()) {
             throw std::runtime_error("Failed to open ROM at '" + path + "'");
         }
-        // char c;
-        // for (int i = RAM_START; f.get(c); i++) {
-        //     if (i + 512 >= 4096) {
-        //         throw std::runtime_error("ROM size is too large. Must be < 4096 bytes");
-        //     }
-        //     ram[i] = (uint8_t) c;
-        // }
-        // f.close();
 
         std::streampos size = f.tellg();
         char* buffer = new char[size];
         f.seekg(0, std::ios::beg);
         f.read(buffer, size);
         f.close();
-
         for (long i = 0; i < size; i++){
             ram[RAM_START + i] = buffer[i];
         }
@@ -97,12 +87,10 @@ namespace eridu{
         if (!window) {
             sdlError("Failed to initialize SDL window.");
         }
-        
         renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
         if (!renderer) {
             sdlError("Failed to initialize SDL renderer.");
         }
-        // SDL_RenderSetScale(renderer, SCREEN_SCALE, SCREEN_SCALE);
 
         texture = SDL_CreateTexture(
             renderer, 
@@ -121,37 +109,16 @@ namespace eridu{
         if (romPath.empty()) {
             throw std::runtime_error("No ROM has been loaded.");
         }
-
-        // uint32_t prev = 0;
-        // uint32_t curr = 0;
-        // while (isAlive) {
-        //     curr = SDL_GetTicks();
-
-        //     // limit framerate
-        //     if (curr - prev >= SCREEN_REFRESH) {
-        //         cycle();
-        //     } else {
-        //         SDL_Delay(1);
-        //     }
-
-        //     if (screenRefresh) {
-        //         output();
-        //     }
-        //     input();
-        //     prev = curr;
-        // }
-
         auto prev = std::chrono::high_resolution_clock::now();
 
         while (isAlive) {
             auto curr = std::chrono::high_resolution_clock::now();
             float dt = std::chrono::duration<float, std::chrono::milliseconds::period>(curr - prev).count();
-
             if (dt > CYCLE_DELAY) {
                 prev = curr;
                 cycle();
-                input();
                 output();
+                input();
             }
         }
     }
@@ -162,22 +129,22 @@ namespace eridu{
         pc += 2;
 
         switch((ir & 0xF000) >> 12) {
-            case 0x0:  return insG0();
-            case 0x1:  return insG1();
-            case 0x2:  return insG2(); 
-            case 0x3:  return insG3();
-            case 0x4:  return insG4();
-            case 0x5:  return insG5();
-            case 0x6:  return insG6();
-            case 0x7:  return insG7();
-            case 0x8:  return insG8();
-            case 0x9:  return insG9();
-            case 0xA:  return insGA();
-            case 0xB:  return insGB();
-            case 0xC:  return insGC();
-            case 0xD:  return insGD();
-            case 0xE:  return insGE();
-            case 0xF:  return insGF();
+            case 0x0:  insG0();  break;
+            case 0x1:  insG1();  break;
+            case 0x2:  insG2();  break;
+            case 0x3:  insG3();  break;
+            case 0x4:  insG4();  break;
+            case 0x5:  insG5();  break;
+            case 0x6:  insG6();  break;
+            case 0x7:  insG7();  break;
+            case 0x8:  insG8();  break;
+            case 0x9:  insG9();  break;
+            case 0xA:  insGA();  break;
+            case 0xB:  insGB();  break;
+            case 0xC:  insGC();  break;
+            case 0xD:  insGD();  break;
+            case 0xE:  insGE();  break;
+            case 0xF:  insGF();  break;
         }
         if (delayTimer > 0) {
             delayTimer--;
@@ -191,11 +158,9 @@ namespace eridu{
         if (ir == 0x00E0) {
             // 00E0 - CLS; clear screen
             memset(display, 0, sizeof(display));
-            screenRefresh = true;
         } else if (ir == 0x00EE) {
             // 00EE - RET; return from subroutine
-            sp--;
-            pc = stack[sp];
+            pc = stack[sp--];
         }
     }
 
@@ -206,8 +171,7 @@ namespace eridu{
 
     // 2NNN - CALL; call subroutine
     void Chip8::insG2() {
-        stack[sp] = pc;
-        sp++;
+        stack[++sp] = pc;
         pc = ir & 0x0FFF;
     }
 
@@ -257,25 +221,23 @@ namespace eridu{
                 VX ^= VY;
                 break;
             case 0x4:  // 8XY4 - ADC; VX = VX + VY
-                VF = (VX + VY) > 255;
+                VF = (VX + VY) > 255 ? 1 : 0;
                 VX = (VX + VY) & 0xFF;
                 break;
             case 0x5:  // 8XY5 - SUB; VX = VX - VY
-                VF = VX > VY;
+                VF = (VX > VY) ? 1 : 0;
                 VX -= VY;
                 break;
             case 0x6:  // 8XY6 - SHR; VX = VX >> 1
                 VF = VX & 0x1;
-                // VX = VY >> 1;
                 VX >>= 1;
                 break;
             case 0x7:  // 8XY7 - SUBN; VX = VY - VX
-                VF = VY > VX;
+                VF = (VY > VX) ? 1 : 0;
                 VX = VY - VX;
                 break;
             case 0xE:  // 8XYE - SHL; VX = VX << 1
                 VF = (VX & 0x80) >> 7;
-                // VX = VY << 1;
                 VX <<= 1;
                 break;
         }
@@ -300,7 +262,8 @@ namespace eridu{
 
     // CXNN - RND; VX = random byte & imm
     void Chip8::insGC() {
-        VX = (rand() % 255) & (ir & 0x00FF);  // TODO: check this
+        uint8_t byte = rand() % 0xFF;
+        VX = byte & (ir & 0x00FF);
     }
 
     // DXYN - DRW; draw 8xN sprite at (VX, VY)
@@ -311,13 +274,11 @@ namespace eridu{
         VF = 0;
         
         for(uint8_t i = 0; i < n; i++) {
-            uint8_t spriteByte = ram[mar + i];
-            
-            for (uint8_t j = 0; j < 8; j++) {
-                uint8_t spritePixel = spriteByte & (0x80 >> j);
-                uint32_t* screenPixel = &display[(y + i) * SCREEN_WIDTH + (x + j)];
+            uint8_t sprite = ram[mar + i];
 
-                if (spritePixel) {
+            for (uint8_t j = 0; j < 8; j++) {
+                uint32_t* screenPixel = &display[(y + i) * SCREEN_WIDTH + (x + j)];
+                if (sprite & (0x80 >> j)) {
                     if (*screenPixel == 0xFFFFFFFF) {
                         VF = 1; // collision
                     }
@@ -325,16 +286,14 @@ namespace eridu{
                 }
             }
         }
-        screenRefresh = true;
     }
 
     void Chip8::insGE() {
         uint8_t op = ir & 0x00FF;
-
-        if (op == 0x9E) {
-            pc += keypad[VX] ? 2 : 0;   // EX9E - SKP; skip next if VX pressed
-        } else if (op == 0xA1) {
-            pc += !keypad[VX] ? 2 : 0;  // EXA1 - SKNP; skip next if VX not pressed
+        if (op == 0x9E && keypad[VX]) {
+            pc += 2;  // EX9E - SKP; skip next if VX pressed
+        } else if (op == 0xA1 && !keypad[VX]) {
+            pc += 2;  // EXA1 - SKNP; skip next if VX not pressed
         }
     }
 
@@ -346,16 +305,13 @@ namespace eridu{
         }
         else if (op == 0x0A) {
             // FX0A - LD; VX = keypress (wait)
-            bool pressed = false;
-
             for (uint8_t i = 0; i < 16; i++) {
                 if (keypad[i]) {
-                    VX = keypad[i];
-                    pressed = true;
-                    break;
+                    VX = i;
+                    return;
                 }
             }
-            pc -= pressed ? 0 : 2;  // wait for keypress
+            pc -= 2;  // wait for keypress
         }
         else if (op == 0x15) {
             delayTimer = VX;  // FX15 - LD; delay = VX
@@ -367,16 +323,13 @@ namespace eridu{
             mar += VX;  // FX1E - ADD; MAR = MAR + VX
         }
         else if (op == 0x29) {
-            mar = FONT_START + (5 * VX);  // FX29 - LD; MAR = hex char
+            mar = FONT_START + VX * 5;  // FX29 - LD; MAR = hex char
         }
         else if (op == 0x33) {
             // FX33 - LD; VX = BCD(VX)
-            uint8_t val = VX;
-            ram[mar + 2] = val % 10;  // ones
-            val /= 10;
-            ram[mar + 1] = val % 10;  // tens
-            val /= 10;
-            ram[mar] = val % 10;      // hundreds
+            ram[mar + 2] = VX % 10;         // ones
+            ram[mar + 1] = (VX / 10) % 10;  // tens
+            ram[mar] = VX / 100;            // hundreds
         }
         else if (op == 0x55) {
             // FX55 - LD; save V0-VX to memory
@@ -394,20 +347,6 @@ namespace eridu{
 
     // output to display
     void Chip8::output() {
-        // SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
-        // SDL_RenderClear(renderer);
-        // SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-
-        // for (uint8_t y = 0; y < SCREEN_HEIGHT; y++) {
-        //     for (uint8_t x = 0; x < SCREEN_WIDTH; x++) {
-        //         if (display[(y * SCREEN_WIDTH) + x] != 0) {
-        //             SDL_RenderDrawPoint(renderer, x, y);
-        //         }
-        //     }
-        // }
-        // SDL_RenderPresent(renderer);
-        // screenRefresh = false;
-
         SDL_UpdateTexture(texture, nullptr, display, pitch);
         SDL_RenderClear(renderer);
         SDL_RenderCopy(renderer, texture, nullptr, nullptr);
@@ -417,15 +356,11 @@ namespace eridu{
     // read input into keypad
     // 
     // Keypad       Keyboard
-    // +-+-+-+-+    +-+-+-+-+
+    // ---------    --------
     // |1|2|3|C|    |1|2|3|4|
-    // +-+-+-+-+    +-+-+-+-+
     // |4|5|6|D|    |Q|W|E|R|
-    // +-+-+-+-+ => +-+-+-+-+
     // |7|8|9|E|    |A|S|D|F|
-    // +-+-+-+-+    +-+-+-+-+
     // |A|0|B|F|    |Z|X|C|V|
-    // +-+-+-+-+    +-+-+-+-+
     //
     void Chip8::input() {
         SDL_Event event;

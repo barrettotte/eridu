@@ -2,7 +2,7 @@
 
 Yet another CHIP-8 interpreter.
 
-The "hello world" of emulation and an introduction to SDL.
+Nothing special.
 
 ## Running
 
@@ -10,7 +10,6 @@ The "hello world" of emulation and an introduction to SDL.
 - build - `make`
 - download ROMs (from zophar.net) - `make roms`
 - run - `./bin/eridu roms/TETRIS`
-
 
 ## References
 
